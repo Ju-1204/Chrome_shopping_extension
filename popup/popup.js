@@ -7,24 +7,24 @@ function loadProducts() {
   chrome.storage.local.get(['products'], (result) => {
     const products = result.products || [];
 
-    if (products.length === 0) {
+    if (products.length === 0) { // Show empty message if no products are saved
       emptyMessage.style.display = 'block';
       productList.innerHTML = '';
       return;
     }
 
-    emptyMessage.style.display = 'none';
+    emptyMessage.style.display = 'none'; 
     productList.innerHTML = '';
 
     // Sort products by timestamp (newest first)
     products.sort((a, b) => b.timestamp - a.timestamp);
 
     products.forEach((product, index) => {
-      const productItem = document.createElement('div');
+      const productItem = document.createElement('div'); // Create a container for each product
       productItem.className = 'product-item';
 
       // Add product image (if available)
-      if (product.image) {
+      if (product.image) { 
         const img = document.createElement('img');
         img.src = product.image;
         img.alt = product.title;
@@ -45,19 +45,30 @@ function loadProducts() {
       url.textContent = product.url;
       productInfo.appendChild(url);
 
-      if (product.price) {
-        const price = document.createElement('div');
-        price.className = 'product-price';
-        price.textContent = product.price;
-        productInfo.appendChild(price);
-      }
-
+      const priceInput = document.createElement('input');
+      priceInput.type = 'text';
+      priceInput.className = 'price-input';
+      priceInput.value = product.price || ''; // Default to scraped price or empty
+      priceInput.placeholder = 'Enter price';
+      // Save price when input loses focus (blur) or Enter is pressed
+      priceInput.addEventListener('blur', () => {
+        saveEditedPrice(index, priceInput.value);
+      });
+      priceInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          saveEditedPrice(index, priceInput.value);
+          priceInput.blur(); // Directly blur the input field
+        }
+      });
+      productInfo.appendChild(priceInput);
       productItem.appendChild(productInfo);
 
       // Add click event to open the product URL
-      productItem.addEventListener('click', () => {
-        chrome.tabs.create({ url: product.url });
-      });
+      productItem.addEventListener('click', (e) => {
+        if (e.target !== priceInput) {
+          chrome.tabs.create({ url: product.url });
+        }});
 
       productList.appendChild(productItem);
     });
@@ -70,6 +81,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     loadProducts();
   }
 });
+
+// Save edited price to storage
+function saveEditedPrice(index, newPrice) {
+  chrome.storage.local.get(['products'], (result) => {
+    const products = result.products || [];
+    
+    if (products[index]) {
+      products[index].price = newPrice;
+      
+      chrome.storage.local.set({ products }, () => {
+        console.log('Price updated successfully:', products[index]);
+        loadProducts(); // Refresh the UI to reflect the changes
+      });
+    }
+  });
+}
 
 // Load products when the popup opens
 loadProducts();
