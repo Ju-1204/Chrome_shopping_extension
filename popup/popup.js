@@ -52,12 +52,12 @@ function loadProducts() {
       priceInput.placeholder = 'Enter price';
       // Save price when input loses focus (blur) or Enter is pressed
       priceInput.addEventListener('blur', () => {
-        saveEditedPrice(index, priceInput.value);
+        saveEditedPrice(product.url, priceInput.value);
       });
       priceInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
-          saveEditedPrice(index, priceInput.value);
+          saveEditedPrice(product.url, priceInput.value);
           priceInput.blur(); // Directly blur the input field
         }
       });
@@ -83,15 +83,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // Save edited price to storage
-function saveEditedPrice(index, newPrice) {
+function saveEditedPrice(productUrl, newPrice) {
   chrome.storage.local.get(['products'], (result) => {
     const products = result.products || [];
     
-    if (products[index]) {
-      products[index].price = newPrice;
+    // Find the product by URL (stable identifier)
+    const productIndex = products.findIndex(p => p.url === productUrl);
+    
+    if (productIndex !== -1) {
+      products[productIndex].price = newPrice;
       
       chrome.storage.local.set({ products }, () => {
-        console.log('Price updated successfully:', products[index]);
+        console.log('Price updated successfully:', products[productIndex]);
         loadProducts(); // Refresh the UI to reflect the changes
       });
     }
