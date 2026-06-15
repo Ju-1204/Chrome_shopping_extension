@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Shopping Assistant",
+  "version": "1.0",
+  "description": "Save products, organize them into groups, and get sale alerts—all",
+  "permissions": [
+    "tabs",
+    "storage",
+    "activeTab",
+    "scripting",
+    "notifications"       
+  ],
+  "host_permissions": [
+  "<all_urls>"
+],
+  "background": {
+    "service_worker": "backend.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/shopping_cart_24.png",
+      "48": "icons/shopping_cart_24.png",
+      "128": "icons/shopping_cart_24.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}
